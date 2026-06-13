@@ -612,6 +612,7 @@ function g1Pick(n,btn){
       if(num===g1Current) b.classList.add('correct');
     });
   }
+  recordResult('Game 1 - Listen & Pick', 'g1-'+g1Idx, n===g1Current, numWords[n], numWords[g1Current], 'Listen and pick: '+g1Current);
   g1Idx++;
   updateG1UI();
   setTimeout(()=>g1Round(), 1200);
@@ -693,7 +694,9 @@ function g2SelectWord(w,item){
 function g2Drop(dz){
   if(dz.classList.contains('filled')) return;
   if(!g2DragWord) return;
-  if(g2DragWord===dz.dataset.answer){
+  const isCorrect = g2DragWord===dz.dataset.answer;
+  recordResult('Game 2 - Match Numbers', 'g2-'+dz.dataset.num, isCorrect, g2DragWord, dz.dataset.answer, 'Match number '+dz.dataset.num);
+  if(isCorrect){
     dz.innerHTML=`<div style="font-family:'Fredoka One',sans-serif;font-size:20px;color:var(--yellow-dark);">${dz.dataset.num}</div><div style="font-size:14px;font-weight:800;color:var(--correct);">${g2DragWord}</div>`;
     dz.classList.add('filled');
     // mark drag item matched
@@ -752,7 +755,9 @@ function g3Round(){
 }
 function g3Speak(){ speak(numWords[parseInt(document.getElementById('g3-target-num').textContent)]); }
 function g3Pop(n,btn,target){
-  if(n===target){
+  const isCorrect = n===target;
+  recordResult('Game 3 - Balloon Pop', 'g3-'+g3Idx, isCorrect, numWords[n], numWords[target], 'Pop the balloon: '+target);
+  if(isCorrect){
     btn.classList.add('pop');
     g3Score++;
     showToast('🎈 POP! '+numWords[n].toUpperCase(),'correct-toast');
@@ -822,6 +827,8 @@ function gqPick(i,btn,ans,text){
   gqAnswered=true;
   document.querySelectorAll('#gq-options .ans-opt').forEach(b=>b.classList.add('disabled'));
   const chat=document.getElementById('gq-chat');
+  const q=gqQuestions[gqIdx];
+  recordResult('Greetings Quiz', 'gq-'+gqIdx, i===ans, q.opts[i], q.opts[q.ans], q.q);
   if(i===ans){
     btn.classList.add('correct');
     gqScore++;
@@ -857,6 +864,33 @@ function gqFinish(){
 
 // ── UTILS ──
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ===== SESSION RESULTS TRACKING =====
+const sessionResults = {
+  "Game 1 - Listen & Pick": { max: 10, items: {} },
+  "Game 2 - Match Numbers": { max: 5, items: {} },
+  "Game 3 - Balloon Pop": { max: 8, items: {} },
+  "Greetings Quiz": { max: gqQuestions.length, items: {} },
+};
+function recordResult(section, key, correct, studentAnswer, correctAnswer, question) {
+  const sec = sessionResults[section];
+  if (sec.items[key]) return;
+  sec.items[key] = { question, correct, studentAnswer, correctAnswer };
+}
+function collectSessionSections() {
+  const sections = [];
+  for (const [name, data] of Object.entries(sessionResults)) {
+    const details = Object.values(data.items);
+    const score = details.filter(d => d.correct).length;
+    sections.push({ name, score, max: data.max, details });
+  }
+  return sections;
+}
+</script>
+<script src="tracker.js"></script>
+<script>
+DTTracker.ensureStudentName();
+DTTracker.showSubmitButton('prea1_unit0', 'Pre-A1 Unit 0', collectSessionSections);
 </script>
 </body>
 </html>
